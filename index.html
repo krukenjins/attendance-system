@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ระบบเช็คชื่อการมาเรียน</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Sarabun', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0f172a, #1e3a8a, #0ea5e9);
+      min-height: 100vh;
+      padding: 20px;
+      color: #1e293b;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: auto;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(12px);
+      border-radius: 30px;
+      padding: 35px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+      animation: fadeIn 0.6s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-size: 42px;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #2563eb, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 800;
+    }
+
+    h2 {
+      color: #0f172a;
+      margin-bottom: 5px;
+    }
+
+    h3 {
+      color: #334155;
+      margin-bottom: 15px;
+    }
+
+    .subtitle {
+      color: #64748b;
+      margin-bottom: 25px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 15px;
+      border: none;
+      border-radius: 16px;
+      background: #e2e8f0;
+      cursor: pointer;
+      font-size: 17px;
+      font-weight: 700;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .active {
+      background: linear-gradient(135deg, #2563eb, #06b6d4);
+      color: white;
+      box-shadow: 0 10px 25px rgba(37,99,235,0.35);
+    }
+
+    .form-section {
+      display: none;
+    }
+
+    .show {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid #cbd5e1;
+      font-size: 16px;
+      background: #f8fafc;
+      transition: 0.3s;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 4px rgba(37,99,235,0.15);
+      background: white;
+    }
+
+    button {
+      background: linear-gradient(135deg, #2563eb, #06b6d4);
+      color: white;
+      border: none;
+      padding: 14px 22px;
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 700;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 25px rgba(37,99,235,0.3);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding: 25px;
+      background: linear-gradient(135deg, #2563eb, #0ea5e9);
+      border-radius: 24px;
+      color: white;
+    }
+
+    .topbar h2,
+    .topbar p {
+      color: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 25px;
+      overflow: hidden;
+      border-radius: 20px;
+      background: white;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+
+    th, td {
+      padding: 14px;
+      text-align: center;
+    }
+
+    th {
+      background: linear-gradient(135deg, #1d4ed8, #0284c7);
+      color: white;
+      font-size: 15px;
+    }
+
+    tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    tr:hover {
+      background: #e0f2fe;
+      transition: 0.2s;
+    }
+
+    .status-select {
+      border-radius: 12px;
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      background: white;
+      font-weight: bold;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .card {
+      padding: 25px;
+      border-radius: 24px;
+      color: white;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px) scale(1.02);
+    }
+
+    .card:nth-child(1) {
+      background: linear-gradient(135deg, #16a34a, #4ade80);
+    }
+
+    .card:nth-child(2) {
+      background: linear-gradient(135deg, #dc2626, #fb7185);
+    }
+
+    .card:nth-child(3) {
+      background: linear-gradient(135deg, #ca8a04, #facc15);
+    }
+
+    .card:nth-child(4) {
+      background: linear-gradient(135deg, #7c3aed, #a78bfa);
+    }
+
+    .card h2 {
+      font-size: 42px;
+      margin-top: 10px;
+      color: white;
+    }
+
+    .card h3 {
+      color: rgba(255,255,255,0.9);
+      font-size: 20px;
+    }
+
+    canvas {
+      margin-top: 35px;
+      background: white;
+      padding: 20px;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .remember {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .remember input {
+      width: auto;
+      transform: scale(1.2);
+    }
+
+    .student-inputs {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 15px;
+      margin-top: 15px;
+      align-items: center;
+    }
+
+    .export-btn {
+      margin-top: 30px;
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+    }
+
+    .auth-card {
+      max-width: 550px;
+      margin: auto;
+      background: white;
+      padding: 35px;
+      border-radius: 30px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+
+    .logo {
+      font-size: 70px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .welcome {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    @media(max-width: 768px) {
+
+      body {
+        padding: 10px;
+      }
+
+      .container {
+        padding: 15px;
+        border-radius: 22px;
+      }
+
+      .auth-card {
+        padding: 25px 18px;
+        border-radius: 24px;
+      }
+
+      h1 {
+        font-size: 28px;
+        line-height: 1.2;
+      }
+
+      .subtitle {
+        font-size: 14px;
+      }
+
+      .tabs {
+        flex-direction: column;
+      }
+
+      .tab-btn {
+        width: 100%;
+        font-size: 15px;
+        padding: 14px;
+      }
+
+      input,
+      select,
+      button {
+        font-size: 16px;
+        min-height: 52px;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .topbar button {
+        width: 100%;
+      }
+
+      .student-inputs {
+        grid-template-columns: 1fr;
+      }
+
+      .student-inputs button {
+        width: 100%;
+      }
+
+      .summary {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .card {
+        padding: 18px;
+        border-radius: 18px;
+      }
+
+      .card h2 {
+        font-size: 30px;
+      }
+
+      .card h3 {
+        font-size: 16px;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        border-radius: 18px;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        font-size: 14px;
+      }
+
+      .status-select {
+        min-width: 110px;
+        font-size: 14px;
+      }
+
+      canvas {
+        padding: 10px;
+        border-radius: 18px;
+      }
+
+      .remember {
+        align-items: flex-start;
+      }
+
+      .remember label {
+        font-size: 14px;
+      }
+
+      .export-btn {
+        width: 100%;
+      }
+    }
+
+    @media(max-width: 480px) {
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .logo {
+        font-size: 56px;
+      }
+
+      .summary {
+        grid-template-columns: 1fr;
+      }
+
+      .card h2 {
+        font-size: 26px;
+      }
+
+      .topbar h2 {
+        font-size: 20px;
+      }
+
+      .topbar p {
+        font-size: 14px;
+      }
+
+      table {
+        font-size: 13px;
+      }
+    }
+
+      h1 {
+        font-size: 30px;
+      }
+
+      .topbar {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+      }
+
+      .student-inputs {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- LOGIN / REGISTER -->
+  <div id="authSection">
+
+    <div class="auth-card">
+
+    <div class="logo">🎓</div>
+
+    <div class="welcome">
+      <h1>ระบบเช็คชื่อ</h1>
+      <p class="subtitle">Student Attendance Management System</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('login')">Login</button>
+      <button class="tab-btn" onclick="showTab('register')">Sign Up</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="login" class="form-section show">
+
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="loginUsername">
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPassword">
+      </div>
+
+      <div class="remember">
+        <input type="checkbox" id="rememberMe">
+        <label for="rememberMe">จดจำชื่อผู้ใช้และรหัสผ่าน</label>
+      </div>
+
+      <button onclick="login()">เข้าสู่ระบบ</button>
+
+    </div>
+
+    <!-- REGISTER -->
+    <div id="register" class="form-section">
+
+      <div class="form-group">
+        <label>ชื่อ - นามสกุล</label>
+        <input type="text" id="fullName">
+      </div>
+
+      <div class="form-group">
+        <label>ห้องประจำชั้น</label>
+        <input type="text" id="classroom" placeholder="เช่น ม.1/1">
+      </div>
+
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="regUsername">
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="regPassword">
+      </div>
+
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" id="confirmPassword">
+      </div>
+
+      <button onclick="register()">สมัครสมาชิก</button>
+
+    </div>
+
+  </div>
+
+  </div>
+
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="hidden">
+
+    <div id="adminPanel" class="hidden" style="margin-bottom:25px;background:white;padding:25px;border-radius:24px;box-shadow:0 10px 25px rgba(0,0,0,0.08);">
+      <h2 style="margin-bottom:20px;">🛠️ ระบบผู้ดูแล (Admin)</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ชื่อครู</th>
+            <th>ห้องประจำชั้น</th>
+            <th>Username</th>
+            <th>สิทธิ์</th>
+            <th>จำนวนนักเรียน</th>
+          </tr>
+        </thead>
+
+        <tbody id="teacherTable"></tbody>
+      </table>
+    </div>
+
+    <div class="topbar">
+      <div>
+        <h2 id="teacherName"></h2>
+        <p id="teacherClass"></p>
+      </div>
+
+      <button onclick="logout()">ออกจากระบบ</button>
+    </div>
+
+
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;">
+      <h3>เพิ่มรายชื่อนักเรียน</h3>
+
+      <div style="background:#eff6ff;padding:10px 18px;border-radius:16px;font-weight:bold;color:#2563eb;">
+        👥 รองรับหลายครูหลายห้องเรียน
+      </div>
+    </div>
+
+    <div class="student-inputs">
+      <input type="text" id="studentName" placeholder="ชื่อนักเรียน">
+      <button onclick="addStudent()">เพิ่มนักเรียน</button>
+    </div>
+
+
+    <table>
+      <thead>
+        <tr>
+          <th>เลขที่</th>
+          <th>ชื่อ</th>
+          <th>สถานะ</th>
+          <th>มา</th>
+          <th>ขาด</th>
+          <th>ลา</th>
+          <th>มาสาย</th>
+          <th>ค่าเฉลี่ยการมาเรียน</th>
+          <th>เช็คชื่อล่าสุด</th>
+        </tr>
+      </thead>
+
+      <tbody id="studentTable"></tbody>
+    </table>
+
+
+    <div class="summary">
+
+      <div class="card">
+        <h3>มา</h3>
+        <h2 id="presentTotal">0</h2>
+      </div>
+
+      <div class="card">
+        <h3>ขาด</h3>
+        <h2 id="absentTotal">0</h2>
+      </div>
+
+      <div class="card">
+        <h3>ลา</h3>
+        <h2 id="leaveTotal">0</h2>
+      </div>
+
+      <div class="card">
+        <h3>มาสาย</h3>
+        <h2 id="lateTotal">0</h2>
+      </div>
+
+    </div>
+
+
+    <canvas id="attendanceChart"></canvas>
+
+    <div style="margin-top:40px;">
+      <h3 style="margin-bottom:20px;">📅 Dashboard สรุปรายเดือน</h3>
+
+      <div class="summary">
+
+        <div class="card">
+          <h3>วันเรียนทั้งหมด</h3>
+          <h2 id="monthlyDays">0</h2>
+        </div>
+
+        <div class="card">
+          <h3>อัตราการมาเรียน</h3>
+          <h2 id="monthlyAttendanceRate">0%</h2>
+        </div>
+
+        <div class="card">
+          <h3>นักเรียนมาสายสูงสุด</h3>
+          <h2 id="topLateStudent">-</h2>
+        </div>
+
+        <div class="card">
+          <h3>นักเรียนขาดสูงสุด</h3>
+          <h2 id="topAbsentStudent">-</h2>
+        </div>
+
+      </div>
+
+      <canvas id="monthlyChart"></canvas>
+    </div>
+
+
+    <div style="display:flex;gap:15px;flex-wrap:wrap;margin-top:30px;">
+      <button onclick="newAttendanceDay()">🗓️ เปิดวันเช็คชื่อใหม่</button>
+      <button class="export-btn" onclick="exportExcel()">📥 Export Excel</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+  // =============================
+  // GOOGLE SHEETS API CONFIG
+  // =============================
+
+  // วิธีใช้งาน
+  // 1. สร้าง Google Sheet
+  // 2. ไปที่ Extensions > Apps Script
+  // 3. วางโค้ด Apps Script ด้านล่าง
+  // 4. Deploy > New deployment > Web app
+  // 5. ตั้งค่า Anyone can access
+  // 6. นำ URL มาใส่ใน API_URL
+
+  const API_URL = 'วาง Web App URL ของ Google Apps Script ตรงนี้';
+
+  async function saveToGoogleSheets(data) {
+
+    if(API_URL === 'วาง Web App URL ของ Google Apps Script ตรงนี้') {
+      console.log('ยังไม่ได้เชื่อม Google Sheets');
+      return;
+    }
+
+    try {
+
+      await fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      console.log('บันทึกข้อมูลลง Google Sheets สำเร็จ');
+
+    } catch(error) {
+      console.error('เกิดข้อผิดพลาด:', error);
+    }
+  }
+
+  // ==========================================
+  // GOOGLE APPS SCRIPT CODE
+  // ==========================================
+
+  /*
+
+  function doPost(e) {
+
+    const sheet = SpreadsheetApp.openById('ใส่ GOOGLE SHEET ID');
+    const ws = sheet.getSheetByName('Attendance');
+
+    const data = JSON.parse(e.postData.contents);
+
+    ws.appendRow([
+      new Date(),
+      data.teacher,
+      data.classroom,
+      data.student,
+      data.status,
+      data.present,
+      data.absent,
+      data.leave,
+      data.late,
+      data.average
+    ]);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({result:'success'}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  */
+
+  let users = JSON.parse(localStorage.getItem('users')) || [];
+
+  // ระบบ Admin เริ่มต้น
+  if(users.length === 0) {
+    users.push({
+      fullName: 'Administrator',
+      classroom: 'ทุกห้องเรียน',
+      username: 'admin',
+      password: 'admin123',
+      role: 'admin',
+      students: []
+    });
+
+    localStorage.setItem('users', JSON.stringify(users));
+  }
+  let currentUser = null;
+  let chart;
+  let monthlyChart;
+  let todayDate = new Date().toLocaleDateString('th-TH');
+
+
+  function showTab(tab) {
+
+    document.querySelectorAll('.form-section').forEach(el => {
+      el.classList.remove('show');
+    });
+
+    document.getElementById(tab).classList.add('show');
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+
+    event.target.classList.add('active');
+  }
+
+
+  function register() {
+
+    const fullName = document.getElementById('fullName').value;
+    const classroom = document.getElementById('classroom').value;
+    const username = document.getElementById('regUsername').value;
+    const password = document.getElementById('regPassword').value;
+    const confirm = document.getElementById('confirmPassword').value;
+
+    if (!fullName || !classroom || !username || !password || !confirm) {
+      alert('กรุณากรอกข้อมูลให้ครบ');
+      return;
+    }
+
+    if (password !== confirm) {
+      alert('รหัสผ่านไม่ตรงกัน');
+      return;
+    }
+
+    const exists = users.find(u => u.username === username);
+
+    if (exists) {
+      alert('Username นี้ถูกใช้งานแล้ว');
+      return;
+    }
+
+    const user = {
+      fullName,
+      classroom,
+      username,
+      password,
+      role: 'teacher',
+      students: []
+    };
+
+    users.push(user);
+
+    localStorage.setItem('users', JSON.stringify(users));
+
+    alert('สมัครสมาชิกสำเร็จ');
+
+    location.reload();
+  }
+
+
+  function login() {
+
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+
+    const user = users.find(u => u.username === username && u.password === password);
+
+    if (!user) {
+      alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+      return;
+    }
+
+    currentUser = user;
+
+    if (document.getElementById('rememberMe').checked) {
+
+      localStorage.setItem('rememberUser', username);
+      localStorage.setItem('rememberPass', password);
+
+    }
+
+    document.getElementById('authSection').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+
+    document.getElementById('teacherName').innerText = '👩‍🏫 ครู: ' + user.fullName;
+    document.getElementById('teacherClass').innerText = 'ห้องประจำชั้น: ' + user.classroom;
+
+    // แสดงหน้า Admin
+    if(user.role === 'admin') {
+      document.getElementById('adminPanel').classList.remove('hidden');
+      renderTeacherTable();
+    }
+
+    renderStudents();
+  }
+
+
+  function logout() {
+    location.reload();
+  }
+
+
+  function renderTeacherTable() {
+
+    const teacherTable = document.getElementById('teacherTable');
+
+    teacherTable.innerHTML = '';
+
+    users.forEach(user => {
+
+      teacherTable.innerHTML += `
+        <tr>
+          <td>${user.fullName}</td>
+          <td>${user.classroom}</td>
+          <td>${user.username}</td>
+          <td>${user.role}</td>
+          <td>${user.students ? user.students.length : 0}</td>
+        </tr>
+      `;
+    });
+  }
+
+
+  function addStudent() {
+
+    const name = document.getElementById('studentName').value;
+
+    if (!name) {
+      alert('กรุณากรอกชื่อนักเรียน');
+      return;
+    }
+
+    currentUser.students.push({
+      name,
+      present: 0,
+      absent: 0,
+      leave: 0,
+      late: 0,
+      status: 'มา',
+      lastCheckDate: ''
+    });
+
+    saveCurrentUser();
+
+    document.getElementById('studentName').value = '';
+
+    renderStudents();
+  }
+
+
+  function changeStatus(index, value) {
+
+    const student = currentUser.students[index];
+
+    const today = new Date().toLocaleDateString('th-TH');
+
+    if(student.lastCheckDate === today) {
+      alert('นักเรียนคนนี้ถูกเช็คชื่อวันนี้แล้ว');
+      return;
+    }
+
+    student.status = value;
+    student.lastCheckDate = today;
+
+    if (value === 'มา') {
+      student.present += 1;
+    }
+
+    if (value === 'ขาด') {
+      student.absent += 1;
+    }
+
+    if (value === 'ลา') {
+      student.leave += 1;
+    }
+
+    if (value === 'มาสาย') {
+      student.late += 1;
+    }
+
+    saveCurrentUser();
+
+    saveToGoogleSheets({
+      date: today,
+      teacher: currentUser.fullName,
+      classroom: currentUser.classroom,
+      student: student.name,
+      status: value,
+      present: student.present,
+      absent: student.absent,
+      leave: student.leave,
+      late: student.late,
+      average: ((student.present / (student.present + student.absent + student.leave + student.late)) * 100).toFixed(2)
+    });
+
+    renderStudents();
+  }
+
+
+  function newAttendanceDay() {
+
+    const today = new Date().toLocaleDateString('th-TH');
+
+    currentUser.students.forEach(student => {
+      student.lastCheckDate = '';
+      student.status = 'มา';
+    });
+
+    saveCurrentUser();
+
+    alert('เปิดวันเช็คชื่อใหม่เรียบร้อยแล้ว วันที่ ' + today);
+
+    renderStudents();
+  }
+
+
+  function renderStudents() {
+
+    const table = document.getElementById('studentTable');
+
+    table.innerHTML = '';
+
+    let totalPresent = 0;
+    let totalAbsent = 0;
+    let totalLeave = 0;
+    let totalLate = 0;
+
+    currentUser.students.forEach((student, index) => {
+
+      totalPresent += student.present;
+      totalAbsent += student.absent;
+      totalLeave += student.leave;
+      totalLate += student.late;
+
+      const total = student.present + student.absent + student.leave + student.late;
+
+      const average = ((student.present / total) * 100).toFixed(2);
+
+      table.innerHTML += `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${student.name}</td>
+
+          <td>
+            <select class="status-select" onchange="changeStatus(${index}, this.value)">
+              <option ${student.status === 'มา' ? 'selected' : ''}>มา</option>
+              <option ${student.status === 'ขาด' ? 'selected' : ''}>ขาด</option>
+              <option ${student.status === 'ลา' ? 'selected' : ''}>ลา</option>
+              <option ${student.status === 'มาสาย' ? 'selected' : ''}>มาสาย</option>
+            </select>
+          </td>
+
+          <td>${student.present}</td>
+          <td>${student.absent}</td>
+          <td>${student.leave}</td>
+          <td>${student.late}</td>
+          <td>${average}%</td>
+          <td>${student.lastCheckDate || '-'}</td>
+        </tr>
+      `;
+    });
+
+    document.getElementById('presentTotal').innerText = totalPresent;
+    document.getElementById('absentTotal').innerText = totalAbsent;
+    document.getElementById('leaveTotal').innerText = totalLeave;
+    document.getElementById('lateTotal').innerText = totalLate;
+
+    drawChart(totalPresent, totalAbsent, totalLeave, totalLate);
+
+    renderMonthlyDashboard();
+  }
+
+
+  function renderMonthlyDashboard() {
+
+    let totalPresent = 0;
+    let totalAbsent = 0;
+    let totalLeave = 0;
+    let totalLate = 0;
+
+    let topLate = '';
+    let topAbsent = '';
+
+    let maxLate = -1;
+    let maxAbsent = -1;
+
+    currentUser.students.forEach(student => {
+
+      totalPresent += student.present;
+      totalAbsent += student.absent;
+      totalLeave += student.leave;
+      totalLate += student.late;
+
+      if(student.late > maxLate) {
+        maxLate = student.late;
+        topLate = student.name;
+      }
+
+      if(student.absent > maxAbsent) {
+        maxAbsent = student.absent;
+        topAbsent = student.name;
+      }
+    });
+
+    const totalAll = totalPresent + totalAbsent + totalLeave + totalLate;
+
+    const attendanceRate = totalAll > 0
+      ? ((totalPresent / totalAll) * 100).toFixed(2)
+      : 0;
+
+    document.getElementById('monthlyDays').innerText = totalAll;
+    document.getElementById('monthlyAttendanceRate').innerText = attendanceRate + '%';
+    document.getElementById('topLateStudent').innerText = topLate || '-';
+    document.getElementById('topAbsentStudent').innerText = topAbsent || '-';
+
+    drawMonthlyChart(totalPresent, totalAbsent, totalLeave, totalLate);
+  }
+
+
+  function drawMonthlyChart(present, absent, leave, late) {
+
+    const ctx = document.getElementById('monthlyChart');
+
+    if(monthlyChart) {
+      monthlyChart.destroy();
+    }
+
+    monthlyChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['มา', 'ขาด', 'ลา', 'มาสาย'],
+        datasets: [{
+          label: 'สรุปรายเดือน',
+          data: [present, absent, leave, late],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+  }
+
+
+  function drawChart(present, absent, leave, late) {
+
+    const ctx = document.getElementById('attendanceChart');
+
+    if (chart) {
+      chart.destroy();
+    }
+
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['มา', 'ขาด', 'ลา', 'มาสาย'],
+        datasets: [{
+          label: 'สรุปการมาเรียน',
+          data: [present, absent, leave, late]
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: true
+          }
+        }
+      }
+    });
+  }
+
+
+  function saveCurrentUser() {
+
+    const index = users.findIndex(u => u.username === currentUser.username);
+
+    users[index] = currentUser;
+
+    localStorage.setItem('users', JSON.stringify(users));
+  }
+
+
+  function exportExcel() {
+
+    const data = currentUser.students.map((s, i) => {
+
+      const total = s.present + s.absent + s.leave + s.late;
+
+      return {
+        'เลขที่': i + 1,
+        'ชื่อ': s.name,
+        'มา': s.present,
+        'ขาด': s.absent,
+        'ลา': s.leave,
+        'มาสาย': s.late,
+        'ค่าเฉลี่ยการมาเรียน (%)': ((s.present / total) * 100).toFixed(2)
+      }
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
+
+    XLSX.writeFile(workbook, 'attendance.xlsx');
+  }
+
+
+  window.onload = () => {
+
+    const savedUser = localStorage.getItem('rememberUser');
+    const savedPass = localStorage.getItem('rememberPass');
+
+    if (savedUser && savedPass) {
+      document.getElementById('loginUsername').value = savedUser;
+      document.getElementById('loginPassword').value = savedPass;
+      document.getElementById('rememberMe').checked = true;
+    }
+  }
+
+</script>
+
+</body>
+</html>
